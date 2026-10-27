@@ -1,0 +1,11 @@
+- [ ] Update build.gradle.kts with Firebase and support dependencies
+- [ ] Update AndroidManifest.xml with activities and permissions
+- [ ] Create AttendanceRecord.java model class with getters/setters
+- [ ] Create XML layout files for all 5 screens (splash, login, register, home, add_edit, item_attendance)
+- [ ] Implement AttendanceAdapter.java for RecyclerView
+- [ ] Implement SplashActivity.java (Screen 1)
+- [ ] Implement LoginActivity.java with validation & Firebase Auth (Screen 2)
+- [ ] Implement RegisterActivity.java with validation & Firebase Auth (Screen 3)
+- [ ] Implement HomeActivity.java with Realtime DB, FAB, SharedPreferences, Sensors, and Implicit Intents (Screen 4)
+- [ ] Implement AddEditActivity.java with Camera/Gallery photo selection and CRUD ops (Screen 5)
+- [ ] Build and verify Gradle build success
