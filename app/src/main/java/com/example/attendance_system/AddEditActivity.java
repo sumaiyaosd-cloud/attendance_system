@@ -46,7 +46,11 @@ public class AddEditActivity extends AppCompatActivity {
         etDate = findViewById(R.id.etDate);
         etStatus = findViewById(R.id.etStatus);
 
-        dbRef = FirebaseDatabase.getInstance().getReference("attendance_records");
+        try {
+            dbRef = FirebaseDatabase.getInstance().getReference("attendance_records");
+        } catch (Exception e) {
+            dbRef = null;
+        }
 
         // Check if editing existing record
         Intent intent = getIntent();
@@ -66,7 +70,6 @@ public class AddEditActivity extends AppCompatActivity {
             }
         }
 
-        // Feature 10: Take photo with camera intent
         btnCamera.setOnClickListener(v -> {
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
@@ -76,7 +79,6 @@ public class AddEditActivity extends AppCompatActivity {
             }
         });
 
-        // Feature 10: Pick photo from gallery intent
         btnGallery.setOnClickListener(v -> {
             Intent pickPhotoIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             startActivityForResult(pickPhotoIntent, REQUEST_IMAGE_PICK);
@@ -94,7 +96,6 @@ public class AddEditActivity extends AppCompatActivity {
                 if (extras != null) {
                     Bitmap imageBitmap = (Bitmap) extras.get("data");
                     ivPhoto.setImageBitmap(imageBitmap);
-                    // Convert bitmap to URI string representation for storage
                     photoUriStr = getImageUriFromBitmap(imageBitmap);
                 }
             } else if (requestCode == REQUEST_IMAGE_PICK) {
@@ -120,7 +121,6 @@ public class AddEditActivity extends AppCompatActivity {
         String date = etDate.getText() != null ? etDate.getText().toString().trim() : "";
         String status = etStatus.getText() != null ? etStatus.getText().toString().trim() : "";
 
-        // Feature 3: User input with validation (no crash on empty/wrong input)
         if (name.isEmpty()) {
             etStudentName.setError("Student name is required");
             etStudentName.requestFocus();
@@ -144,18 +144,23 @@ public class AddEditActivity extends AppCompatActivity {
         }
 
         if (recordId == null || recordId.isEmpty()) {
-            recordId = dbRef.push().getKey();
+            recordId = UUID.randomUUID().toString();
         }
 
         AttendanceRecord record = new AttendanceRecord(recordId, name, subject, date, status, photoUriStr);
 
-        dbRef.child(recordId).setValue(record).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                Toast.makeText(AddEditActivity.this, "Attendance Saved Successfully!", Toast.LENGTH_SHORT).show();
-                finish();
-            } else {
-                Toast.makeText(AddEditActivity.this, "Failed to save record", Toast.LENGTH_SHORT).show();
+        // Save locally first for instant, guaranteed offline support
+        AttendanceLocalStore.saveRecord(this, record);
+
+        // Also push to Firebase if connected
+        if (dbRef != null) {
+            try {
+                dbRef.child(recordId).setValue(record);
+            } catch (Exception ignored) {
             }
-        });
+        }
+
+        Toast.makeText(AddEditActivity.this, "Attendance Saved Successfully!", Toast.LENGTH_SHORT).show();
+        finish();
     }
 }

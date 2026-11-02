@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -37,6 +38,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
     private FloatingActionButton fabAdd;
     private Button btnCall, btnShare, btnWeb, btnLogout;
     private Toolbar toolbar;
+    private TextView tvTotalCount, tvPresentCount, tvAbsentCount, tvSummaryTitle;
 
     private AttendanceAdapter adapter;
     private List<AttendanceRecord> recordList;
@@ -45,6 +47,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     private Sensor proximitySensor;
     private String userRole = "Teacher";
+    private boolean isFirebaseConnected = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,19 +61,23 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         btnWeb = findViewById(R.id.btnWeb);
         btnLogout = findViewById(R.id.btnLogout);
         toolbar = findViewById(R.id.toolbar);
+        tvTotalCount = findViewById(R.id.tvTotalCount);
+        tvPresentCount = findViewById(R.id.tvPresentCount);
+        tvAbsentCount = findViewById(R.id.tvAbsentCount);
+        tvSummaryTitle = findViewById(R.id.tvSummaryTitle);
 
-        // Get user role from SharedPreferences
         SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
         userRole = prefs.getString("user_role", "Teacher");
 
         if (toolbar != null) {
-            toolbar.setTitle(userRole.equals("Teacher") ? "Teacher Dashboard (Attendance)" : "Student Dashboard (View Only)");
+            toolbar.setTitle(userRole.equals("Teacher") ? "Teacher Dashboard" : "Student Dashboard");
         }
 
-        // If Student, hide Add FAB (Teachers can add/edit, Students can view)
         if ("Student".equals(userRole)) {
             fabAdd.setVisibility(View.GONE);
         }
+
+        updateSummary();
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recordList = new ArrayList<>();
@@ -107,8 +114,13 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         });
         recyclerView.setAdapter(adapter);
 
-        dbRef = FirebaseDatabase.getInstance().getReference("attendance_records");
-        loadAttendanceData();
+        try {
+            dbRef = FirebaseDatabase.getInstance().getReference("attendance_records");
+            loadAttendanceData();
+        } catch (Exception e) {
+            isFirebaseConnected = false;
+            loadLocalAttendanceData();
+        }
 
         fabAdd.setOnClickListener(v -> {
             if ("Student".equals(userRole)) {
@@ -118,7 +130,6 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
             startActivity(new Intent(HomeActivity.this, AddEditActivity.class));
         });
 
-        // Feature 12: Implicit Intents
         btnCall.setOnClickListener(v -> {
             Intent callIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:0123456789"));
             startActivity(callIntent);
@@ -128,7 +139,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Attendance Report (" + userRole + ")");
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out the attendance records in Attendance Manager (" + userRole + " Dashboard).");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out attendance records in Attendance Manager (" + userRole + " Dashboard). Total: " + recordList.size());
             startActivity(Intent.createChooser(shareIntent, "Share via"));
         });
 
@@ -138,13 +149,15 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         });
 
         btnLogout.setOnClickListener(v -> {
-            FirebaseAuth.getInstance().signOut();
+            try {
+                FirebaseAuth.getInstance().signOut();
+            } catch (Exception ignored) {
+            }
             getSharedPreferences("AttendancePrefs", MODE_PRIVATE).edit().clear().apply();
             startActivity(new Intent(HomeActivity.this, LoginActivity.class));
             finish();
         });
 
-        // Feature 11: Sensor Manager & SensorEventListener
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager != null) {
             proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
@@ -154,6 +167,9 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
+        if (!isFirebaseConnected) {
+            loadLocalAttendanceData();
+        }
         if (proximitySensor != null) {
             sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
@@ -178,7 +194,28 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Not needed
+    }
+
+    private void updateSummary() {
+        int total = recordList != null ? recordList.size() : 0;
+        int present = 0;
+        int absent = 0;
+        if (recordList != null) {
+            for (AttendanceRecord r : recordList) {
+                String status = r.getStatus() != null ? r.getStatus().toLowerCase() : "";
+                if (status.contains("present") || status.contains("p")) {
+                    present++;
+                } else {
+                    absent++;
+                }
+            }
+        }
+        if (tvTotalCount != null) tvTotalCount.setText(String.valueOf(total));
+        if (tvPresentCount != null) tvPresentCount.setText(String.valueOf(present));
+        if (tvAbsentCount != null) tvAbsentCount.setText(String.valueOf(absent));
+        if (tvSummaryTitle != null) {
+            tvSummaryTitle.setText(userRole.equals("Teacher") ? "Teacher Attendance Overview" : "Student Attendance Status");
+        }
     }
 
     private void loadAttendanceData() {
@@ -192,14 +229,35 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                         recordList.add(record);
                     }
                 }
+                List<AttendanceRecord> localList = AttendanceLocalStore.getRecords(HomeActivity.this);
+                for (AttendanceRecord lr : localList) {
+                    boolean alreadyExists = false;
+                    for (AttendanceRecord r : recordList) {
+                        if (r.getId().equals(lr.getId())) {
+                            alreadyExists = true;
+                            break;
+                        }
+                    }
+                    if (!alreadyExists) {
+                        recordList.add(lr);
+                    }
+                }
                 adapter.notifyDataSetChanged();
+                updateSummary();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(HomeActivity.this, "Failed to load data: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                loadLocalAttendanceData();
             }
         });
+    }
+
+    private void loadLocalAttendanceData() {
+        recordList.clear();
+        recordList.addAll(AttendanceLocalStore.getRecords(this));
+        adapter.notifyDataSetChanged();
+        updateSummary();
     }
 
     private void showRecordDialog(AttendanceRecord record) {
@@ -230,14 +288,14 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
             Toast.makeText(this, "Students are not allowed to delete records", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (id != null && !id.isEmpty()) {
-            dbRef.child(id).removeValue().addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    Toast.makeText(HomeActivity.this, "Record deleted successfully", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(HomeActivity.this, "Failed to delete record", Toast.LENGTH_SHORT).show();
-                }
-            });
+        AttendanceLocalStore.deleteRecord(this, id);
+        if (dbRef != null) {
+            try {
+                dbRef.child(id).removeValue();
+            } catch (Exception ignored) {
+            }
         }
+        loadLocalAttendanceData();
+        Toast.makeText(HomeActivity.this, "Record deleted successfully", Toast.LENGTH_SHORT).show();
     }
 }

@@ -22,10 +22,36 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="32dp"
-            android:text="Login to Attendance Manager"
+            android:layout_marginBottom="24dp"
+            android:text="Login as Teacher or Student"
             android:textColor="@android:color/darker_gray"
             android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/rgLoginRole"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbLoginTeacher"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:checked="true"
+                android:text="Teacher"
+                android:textColor="@color/black" />
+
+            <RadioButton
+                android:id="@+id/rbLoginStudent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Student"
+                android:textColor="@color/black" />
+
+        </RadioGroup>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"

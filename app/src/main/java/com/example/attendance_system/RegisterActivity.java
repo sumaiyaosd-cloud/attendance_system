@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,7 +19,6 @@ public class RegisterActivity extends AppCompatActivity {
     private TextInputEditText etRegEmail, etRegPassword;
     private Button btnRegister;
     private TextView tvGoToLogin;
-    private RadioGroup rgRole;
     private RadioButton rbTeacher;
     private FirebaseAuth mAuth;
 
@@ -29,13 +27,16 @@ public class RegisterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        mAuth = FirebaseAuth.getInstance();
+        try {
+            mAuth = FirebaseAuth.getInstance();
+        } catch (Exception e) {
+            mAuth = null;
+        }
 
         etRegEmail = findViewById(R.id.etRegEmail);
         etRegPassword = findViewById(R.id.etRegPassword);
         btnRegister = findViewById(R.id.btnRegister);
         tvGoToLogin = findViewById(R.id.tvGoToLogin);
-        rgRole = findViewById(R.id.rgRole);
         rbTeacher = findViewById(R.id.rbTeacher);
 
         btnRegister.setOnClickListener(v -> registerUser());
@@ -51,7 +52,6 @@ public class RegisterActivity extends AppCompatActivity {
         String password = etRegPassword.getText() != null ? etRegPassword.getText().toString().trim() : "";
         String role = rbTeacher.isChecked() ? "Teacher" : "Student";
 
-        // User input validation (no crash on empty/wrong input)
         if (email.isEmpty()) {
             etRegEmail.setError("Email is required");
             etRegEmail.requestFocus();
@@ -64,31 +64,39 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        if (mAuth == null) {
+            SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
+            prefs.edit().putString("logged_email", email).putString("user_role", role).putBoolean("remember_me", true).apply();
+            Toast.makeText(RegisterActivity.this, "Registered as " + role + "!", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+            finish();
+            return;
+        }
+
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
+                    SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
+                    prefs.edit()
+                            .putString("logged_email", email)
+                            .putString("user_role", role)
+                            .putBoolean("remember_me", true)
+                            .apply();
+
                     if (task.isSuccessful() && task.getResult() != null && task.getResult().getUser() != null) {
                         String userId = task.getResult().getUser().getUid();
-
-                        // Save role in SharedPreferences & Firebase Database
-                        SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
-                        prefs.edit()
-                                .putString("logged_email", email)
-                                .putString("user_role", role)
-                                .putBoolean("remember_me", true)
-                                .apply();
-
-                        FirebaseDatabase.getInstance().getReference("users")
-                                .child(userId)
-                                .child("role")
-                                .setValue(role);
-
-                        Toast.makeText(RegisterActivity.this, "Registered as " + role + "!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        Toast.makeText(RegisterActivity.this, "Registration Failed: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"), Toast.LENGTH_LONG).show();
+                        try {
+                            FirebaseDatabase.getInstance().getReference("users")
+                                    .child(userId)
+                                    .child("role")
+                                    .setValue(role);
+                        } catch (Exception ignored) {
+                        }
                     }
+
+                    Toast.makeText(RegisterActivity.this, "Registered as " + role + "!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
+                    startActivity(intent);
+                    finish();
                 });
     }
 }

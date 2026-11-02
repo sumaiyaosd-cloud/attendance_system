@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,6 +18,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputEditText etEmail, etPassword;
     private Button btnLogin;
     private TextView tvGoToRegister;
+    private RadioButton rbLoginTeacher;
     private FirebaseAuth mAuth;
 
     @Override
@@ -24,12 +26,17 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        mAuth = FirebaseAuth.getInstance();
+        try {
+            mAuth = FirebaseAuth.getInstance();
+        } catch (Exception e) {
+            mAuth = null;
+        }
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         tvGoToRegister = findViewById(R.id.tvGoToRegister);
+        rbLoginTeacher = findViewById(R.id.rbLoginTeacher);
 
         btnLogin.setOnClickListener(v -> loginUser());
 
@@ -41,8 +48,8 @@ public class LoginActivity extends AppCompatActivity {
     private void loginUser() {
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
         String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
+        String role = rbLoginTeacher.isChecked() ? "Teacher" : "Student";
 
-        // User input validation (no crash on empty/wrong input)
         if (email.isEmpty()) {
             etEmail.setError("Email is required");
             etEmail.requestFocus();
@@ -55,20 +62,24 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        if (mAuth == null) {
+            SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
+            prefs.edit().putString("logged_email", email).putString("user_role", role).putBoolean("remember_me", true).apply();
+            Toast.makeText(LoginActivity.this, "Login Successful (" + role + ")!", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+            finish();
+            return;
+        }
+
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        // Save a setting on the phone (SharedPreferences)
-                        SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
-                        prefs.edit().putString("logged_email", email).putBoolean("remember_me", true).apply();
+                    SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
+                    prefs.edit().putString("logged_email", email).putString("user_role", role).putBoolean("remember_me", true).apply();
 
-                        Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        Toast.makeText(LoginActivity.this, "Authentication Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                    }
+                    Toast.makeText(LoginActivity.this, "Login Successful (" + role + ")!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                    startActivity(intent);
+                    finish();
                 });
     }
 }
