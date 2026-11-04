@@ -15,7 +15,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Welcome Back"
-            android:textColor="@color/purple_500"
+            android:textColor="@color/primary_navy"
             android:textSize="28sp"
             android:textStyle="bold" />
 
@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:text="Login as Teacher or Student"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="@color/text_muted"
             android:textSize="14sp" />
 
         <RadioGroup
@@ -42,16 +42,32 @@
                 android:layout_marginEnd="24dp"
                 android:checked="true"
                 android:text="Teacher"
-                android:textColor="@color/black" />
+                android:textColor="@color/text_dark" />
 
             <RadioButton
                 android:id="@+id/rbLoginStudent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Student"
-                android:textColor="@color/black" />
+                android:textColor="@color/text_dark" />
 
         </RadioGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilStudentId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etStudentId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Student Name / ID (e.g. Rahim)"
+                android:inputType="text" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
@@ -70,7 +86,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="12dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etPassword"
@@ -81,10 +97,38 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Remember Me & Forgot Password Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <CheckBox
+                android:id="@+id/cbRememberMe"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Remember Me"
+                android:textColor="@color/text_dark" />
+
+            <TextView
+                android:id="@+id/tvForgotPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Forgot Password?"
+                android:textColor="@color/primary_navy"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
         <Button
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="56dp"
+            android:backgroundTint="@color/primary_navy"
             android:text="@string/login"
             android:textAllCaps="false"
             android:textSize="16sp" />
@@ -95,7 +139,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="Don't have an account? Register"
-            android:textColor="@color/purple_500"
+            android:textColor="@color/primary_navy"
             android:textSize="14sp"
             android:textStyle="bold" />
 

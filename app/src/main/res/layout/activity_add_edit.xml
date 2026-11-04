@@ -2,6 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_light"
+    android:fillViewport="true"
     android:padding="24dp">
 
     <LinearLayout
@@ -13,8 +15,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="Attendance Details"
-            android:textColor="@color/purple_500"
+            android:text="Take / Manage Attendance"
+            android:textColor="@color/primary_navy"
             android:textSize="24sp"
             android:textStyle="bold" />
 
@@ -31,7 +33,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="20dp"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -40,6 +42,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/accent_teal"
                 android:text="Take Photo"
                 android:textAllCaps="false" />
 
@@ -48,10 +51,27 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                android:backgroundTint="@color/primary_navy"
                 android:text="Pick Gallery"
                 android:textAllCaps="false" />
 
         </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="Select Course:"
+            android:textColor="@color/text_dark"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerCourses"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_search" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
@@ -62,22 +82,8 @@
                 android:id="@+id/etStudentName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/student_name"
+                android:hint="Student Name"
                 android:inputType="textPersonName" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etSubject"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/subject"
-                android:inputType="text" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -90,30 +96,56 @@
                 android:id="@+id/etDate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/date"
+                android:clickable="true"
+                android:focusable="false"
+                android:hint="Date (YYYY-MM-DD) - Tap to pick"
                 android:inputType="date" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Attendance Status:"
+            android:textColor="@color/text_dark"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:orientation="horizontal">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etStatus"
-                android:layout_width="match_parent"
+            <RadioButton
+                android:id="@+id/rbPresent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:hint="@string/status"
-                android:inputType="text" />
+                android:layout_marginEnd="32dp"
+                android:checked="true"
+                android:text="Present"
+                android:textColor="@color/success_green"
+                android:textStyle="bold" />
 
-        </com.google.android.material.textfield.TextInputLayout>
+            <RadioButton
+                android:id="@+id/rbAbsent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Absent"
+                android:textColor="@color/warning_red"
+                android:textStyle="bold" />
+
+        </RadioGroup>
 
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="@string/save"
+            android:backgroundTint="@color/primary_navy"
+            android:text="Save Attendance"
             android:textAllCaps="false"
             android:textSize="16sp" />
 

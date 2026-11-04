@@ -1,33 +1,46 @@
 package com.example.attendance_system;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public class AddEditActivity extends AppCompatActivity {
 
     private ImageView ivPhoto;
     private Button btnCamera, btnGallery, btnSave;
-    private TextInputEditText etStudentName, etSubject, etDate, etStatus;
+    private TextInputEditText etStudentName, etDate;
+    private Spinner spinnerCourses;
+    private RadioButton rbPresent;
 
     private DatabaseReference dbRef;
     private String recordId = "";
     private String photoUriStr = "";
+    private List<Course> courseList;
 
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_IMAGE_PICK = 2;
@@ -42,9 +55,9 @@ public class AddEditActivity extends AppCompatActivity {
         btnGallery = findViewById(R.id.btnGallery);
         btnSave = findViewById(R.id.btnSave);
         etStudentName = findViewById(R.id.etStudentName);
-        etSubject = findViewById(R.id.etSubject);
         etDate = findViewById(R.id.etDate);
-        etStatus = findViewById(R.id.etStatus);
+        spinnerCourses = findViewById(R.id.spinnerCourses);
+        rbPresent = findViewById(R.id.rbPresent);
 
         try {
             dbRef = FirebaseDatabase.getInstance().getReference("attendance_records");
@@ -52,14 +65,63 @@ public class AddEditActivity extends AppCompatActivity {
             dbRef = null;
         }
 
+        // Load Courses into Spinner
+        courseList = CourseStore.getCourses(this);
+        String[] courseNames = new String[courseList.size()];
+        for (int i = 0; i < courseList.size(); i++) {
+            courseNames[i] = courseList.get(i).getCourseName() + " (" + courseList.get(i).getCourseCode() + ")";
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, courseNames);
+        spinnerCourses.setAdapter(adapter);
+
+        // Default to today's date if new record
+        final Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        etDate.setText(sdf.format(calendar.getTime()));
+
+        // Date Picker with Future Date Validation
+        etDate.setOnClickListener(v -> {
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, selectedYear, selectedMonth, selectedDay) -> {
+                Calendar selectedCalendar = Calendar.getInstance();
+                selectedCalendar.set(selectedYear, selectedMonth, selectedDay);
+                // Prevent future dates
+                if (selectedCalendar.after(Calendar.getInstance())) {
+                    Snackbar.make(etDate, "Future date attendance cannot be taken!", Snackbar.LENGTH_LONG).show();
+                    return;
+                }
+                String formattedDate = String.format(Locale.getDefault(), "%d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay);
+                etDate.setText(formattedDate);
+            }, year, month, day);
+
+            // Max date is today
+            datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+            datePickerDialog.show();
+        });
+
         // Check if editing existing record
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("id")) {
             recordId = intent.getStringExtra("id");
             etStudentName.setText(intent.getStringExtra("name"));
-            etSubject.setText(intent.getStringExtra("subject"));
             etDate.setText(intent.getStringExtra("date"));
-            etStatus.setText(intent.getStringExtra("status"));
+            String subject = intent.getStringExtra("subject");
+            for (int i = 0; i < courseList.size(); i++) {
+                if (courseList.get(i).getCourseName().equalsIgnoreCase(subject)) {
+                    spinnerCourses.setSelection(i);
+                    break;
+                }
+            }
+            String status = intent.getStringExtra("status");
+            if (status != null && status.equalsIgnoreCase("Absent")) {
+                RadioButton rbAbsent = findViewById(R.id.rbAbsent);
+                if (rbAbsent != null) rbAbsent.setChecked(true);
+            } else {
+                rbPresent.setChecked(true);
+            }
             photoUriStr = intent.getStringExtra("photoUri");
             if (photoUriStr != null && !photoUriStr.isEmpty()) {
                 try {
@@ -75,7 +137,7 @@ public class AddEditActivity extends AppCompatActivity {
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                 startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
             } else {
-                Toast.makeText(this, "Camera not available", Toast.LENGTH_SHORT).show();
+                Snackbar.make(btnCamera, "Camera not available", Snackbar.LENGTH_SHORT).show();
             }
         });
 
@@ -117,19 +179,14 @@ public class AddEditActivity extends AppCompatActivity {
 
     private void saveRecord() {
         String name = etStudentName.getText() != null ? etStudentName.getText().toString().trim() : "";
-        String subject = etSubject.getText() != null ? etSubject.getText().toString().trim() : "";
+        int selectedCourseIndex = spinnerCourses.getSelectedItemPosition();
+        String subject = selectedCourseIndex >= 0 && selectedCourseIndex < courseList.size() ? courseList.get(selectedCourseIndex).getCourseName() : "Android Development";
         String date = etDate.getText() != null ? etDate.getText().toString().trim() : "";
-        String status = etStatus.getText() != null ? etStatus.getText().toString().trim() : "";
+        String status = rbPresent.isChecked() ? "Present" : "Absent";
 
         if (name.isEmpty()) {
             etStudentName.setError("Student name is required");
             etStudentName.requestFocus();
-            return;
-        }
-
-        if (subject.isEmpty()) {
-            etSubject.setError("Subject is required");
-            etSubject.requestFocus();
             return;
         }
 
@@ -139,8 +196,18 @@ public class AddEditActivity extends AppCompatActivity {
             return;
         }
 
-        if (status.isEmpty()) {
-            status = "Present";
+        // Duplicate prevention check: same student name, course, and date
+        List<AttendanceRecord> existingRecords = AttendanceLocalStore.getRecords(this);
+        for (AttendanceRecord r : existingRecords) {
+            if (r.getStudentName().equalsIgnoreCase(name) &&
+                r.getSubject().equalsIgnoreCase(subject) &&
+                r.getDate().equalsIgnoreCase(date)) {
+                // If it's a new entry (not editing), update the existing record ID instead of creating duplicate
+                if (recordId.isEmpty()) {
+                    recordId = r.getId();
+                }
+                break;
+            }
         }
 
         if (recordId == null || recordId.isEmpty()) {
@@ -149,10 +216,10 @@ public class AddEditActivity extends AppCompatActivity {
 
         AttendanceRecord record = new AttendanceRecord(recordId, name, subject, date, status, photoUriStr);
 
-        // Save locally first for instant, guaranteed offline support
+        // Save locally
         AttendanceLocalStore.saveRecord(this, record);
 
-        // Also push to Firebase if connected
+        // Push to Firebase if connected
         if (dbRef != null) {
             try {
                 dbRef.child(recordId).setValue(record);
@@ -160,7 +227,7 @@ public class AddEditActivity extends AppCompatActivity {
             }
         }
 
-        Toast.makeText(AddEditActivity.this, "Attendance Saved Successfully!", Toast.LENGTH_SHORT).show();
+        Snackbar.make(btnSave, "Attendance Saved Successfully!", Snackbar.LENGTH_SHORT).show();
         finish();
     }
 }
