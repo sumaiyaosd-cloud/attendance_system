@@ -82,7 +82,7 @@
                 android:id="@+id/etStudentName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Student Name"
+                android:hint="Student Name &amp; ID (e.g. Rahim · CSE-101)"
                 android:inputType="textPersonName" />
 
         </com.google.android.material.textfield.TextInputLayout>
@@ -124,10 +124,19 @@
                 android:id="@+id/rbPresent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="32dp"
+                android:layout_marginEnd="16dp"
                 android:checked="true"
                 android:text="Present"
                 android:textColor="@color/success_green"
+                android:textStyle="bold" />
+
+            <RadioButton
+                android:id="@+id/rbLate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:text="Late"
+                android:textColor="#FF9800"
                 android:textStyle="bold" />
 
             <RadioButton

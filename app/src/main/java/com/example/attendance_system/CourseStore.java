@@ -19,10 +19,10 @@ public class CourseStore {
         String jsonStr = prefs.getString(KEY_COURSES, "");
 
         if (jsonStr.isEmpty()) {
-            list.add(new Course("1", "Android Development", "CS-401"));
-            list.add(new Course("2", "Data Structures", "CS-201"));
-            list.add(new Course("3", "Database Systems", "CS-301"));
-            list.add(new Course("4", "Computer Networks", "CS-302"));
+            list.add(new Course("1", "Software Engineering", "CSE 3201 · Section A"));
+            list.add(new Course("2", "Android Development", "CSE 3202 · Section A"));
+            list.add(new Course("3", "Computer Networks", "CSE 3203 · Section B"));
+            list.add(new Course("4", "Artificial Intelligence", "CSE 3204 · Section A"));
             saveCourses(context, list);
             return list;
         }

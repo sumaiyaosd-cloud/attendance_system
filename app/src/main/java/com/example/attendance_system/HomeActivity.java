@@ -16,6 +16,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -48,11 +50,12 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
 
     private RecyclerView recyclerView;
     private FloatingActionButton fabAdd;
-    private Button btnCall, btnShare, btnWeb, btnLogout, btnTakeAttendance, btnFilterPresent, btnFilterAll;
+    private Button btnCall, btnShare, btnWeb, btnLogout, btnTakeAttendance, btnFilterPresent, btnFilterAll, btnNotice, btnRoutine, btnViewSchedule, btnAddCourse;
     private Toolbar toolbar;
-    private TextView tvWelcomeTeacher, tvTotalCourses, tvTotalStudents, tvTodayPresent, tvTodayAbsent, tvOverallPercentage, tvSummaryTitle, tvEligibilityWarning;
+    private TextView tvWelcomeTeacher, tvTotalCourses, tvTotalStudents, tvTodayPresent, tvTodayAbsent, tvSummaryTitle, tvEligibilityWarning, tvTodayDateBanner;
     private EditText etSearch;
     private Spinner spinnerCourseFilter;
+    private CardView cardTodaySchedule;
 
     private AttendanceAdapter adapter;
     private List<AttendanceRecord> recordList;
@@ -81,17 +84,22 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         btnTakeAttendance = findViewById(R.id.btnTakeAttendance);
         btnFilterPresent = findViewById(R.id.btnFilterPresent);
         btnFilterAll = findViewById(R.id.btnFilterAll);
+        btnNotice = findViewById(R.id.btnNotice);
+        btnRoutine = findViewById(R.id.btnRoutine);
+        btnViewSchedule = findViewById(R.id.btnViewSchedule);
+        btnAddCourse = findViewById(R.id.btnAddCourse);
         toolbar = findViewById(R.id.toolbar);
         tvWelcomeTeacher = findViewById(R.id.tvWelcomeTeacher);
         tvTotalCourses = findViewById(R.id.tvTotalCourses);
         tvTotalStudents = findViewById(R.id.tvTotalStudents);
         tvTodayPresent = findViewById(R.id.tvTodayPresent);
         tvTodayAbsent = findViewById(R.id.tvTodayAbsent);
-        tvOverallPercentage = findViewById(R.id.tvOverallPercentage);
         tvSummaryTitle = findViewById(R.id.tvSummaryTitle);
         tvEligibilityWarning = findViewById(R.id.tvEligibilityWarning);
+        tvTodayDateBanner = findViewById(R.id.tvTodayDateBanner);
         etSearch = findViewById(R.id.etSearch);
         spinnerCourseFilter = findViewById(R.id.spinnerCourseFilter);
+        cardTodaySchedule = findViewById(R.id.cardTodaySchedule);
 
         SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
         userRole = prefs.getString("user_role", "Teacher");
@@ -99,18 +107,83 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         userEmail = prefs.getString("logged_email", "Teacher Profile");
 
         if (toolbar != null) {
-            toolbar.setTitle(userRole.equals("Teacher") ? "Teacher Dashboard" : "Student Dashboard");
+            toolbar.setTitle(userRole.equals("Teacher") ? "Teacher Dashboard (" + userEmail + ")" : "Student Dashboard");
         }
 
         if ("Student".equals(userRole)) {
             fabAdd.setVisibility(View.GONE);
             btnTakeAttendance.setVisibility(View.GONE);
             if (spinnerCourseFilter != null) spinnerCourseFilter.setVisibility(View.GONE);
+            if (btnAddCourse != null) addCourseVisibilityGone();
+            if (cardTodaySchedule != null) cardTodaySchedule.setVisibility(View.GONE);
             etSearch.setHint("Search my subjects...");
+            if (btnNotice != null) btnNotice.setText("My Notifications");
         } else {
+            if (btnNotice != null) btnNotice.setText("Send Notice");
+            if (cardTodaySchedule != null) cardTodaySchedule.setVisibility(View.VISIBLE);
+            if (btnAddCourse != null) btnAddCourse.setVisibility(View.VISIBLE);
+
+            String currentDate = new SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.getDefault()).format(new Date());
+            if (tvTodayDateBanner != null) tvTodayDateBanner.setText("Date: " + currentDate);
+
+            if (btnViewSchedule != null) {
+                btnViewSchedule.setOnClickListener(v -> {
+                    List<TodayScheduleStore.ScheduledClass> todayClasses = TodayScheduleStore.getTodayClasses();
+                    CharSequence[] items = new CharSequence[todayClasses.size()];
+                    for (int i = 0; i < todayClasses.size(); i++) {
+                        TodayScheduleStore.ScheduledClass sc = todayClasses.get(i);
+                        items[i] = sc.courseName + " (" + sc.courseCode + ")\nTime: " + sc.time + " | Room: " + sc.room;
+                    }
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Today's Available Classes & Schedule");
+                    builder.setItems(items, (dialog, which) -> {
+                        TodayScheduleStore.ScheduledClass selectedSc = todayClasses.get(which);
+                        Intent intent = new Intent(HomeActivity.this, AddEditActivity.class);
+                        intent.putExtra("preselected_subject", selectedSc.courseName);
+                        startActivity(intent);
+                    });
+                    builder.setPositiveButton("Close", (dialog, which) -> dialog.dismiss());
+                    builder.show();
+                });
+            }
+
+            if (btnAddCourse != null) {
+                btnAddCourse.setOnClickListener(v -> {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Add New Course");
+
+                    LinearLayout layout = new LinearLayout(this);
+                    layout.setOrientation(LinearLayout.VERTICAL);
+                    layout.setPadding(32, 16, 32, 16);
+
+                    final EditText inputName = new EditText(this);
+                    inputName.setHint("Course Name (e.g. Machine Learning)");
+                    layout.addView(inputName);
+
+                    final EditText inputCode = new EditText(this);
+                    inputCode.setHint("Course Code / Section (e.g. CSE 4101)");
+                    layout.addView(inputCode);
+
+                    builder.setView(layout);
+                    builder.setPositiveButton("Add", (dialog, which) -> {
+                        String name = inputName.getText().toString().trim();
+                        String code = inputCode.getText().toString().trim();
+                        if (!name.isEmpty() && !code.isEmpty()) {
+                            String newId = String.valueOf(CourseStore.getCourses(this).size() + 1);
+                            CourseStore.addCourse(this, new Course(newId, name, code));
+                            Snackbar.make(recyclerView, "Course added successfully!", Snackbar.LENGTH_SHORT).show();
+                            recreate();
+                        } else {
+                            Snackbar.make(recyclerView, "Course name and code cannot be empty", Snackbar.LENGTH_SHORT).show();
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+                    builder.show();
+                });
+            }
+
             courseList = CourseStore.getCourses(this);
             List<String> courseNames = new ArrayList<>();
-            courseNames.add("All Courses");
             for (Course c : courseList) {
                 courseNames.add(c.getCourseName());
             }
@@ -119,12 +192,8 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
             spinnerCourseFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    if (position == 0) {
-                        loadDataIntoAdapter(fullRecordList);
-                    } else {
-                        String selectedCourse = courseList.get(position - 1).getCourseName();
-                        filterByCourse(selectedCourse);
-                    }
+                    String selectedCourse = courseList.get(position).getCourseName();
+                    filterByCourse(selectedCourse);
                 }
 
                 @Override
@@ -140,6 +209,48 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         if (profileHeaderLayout != null) {
             profileHeaderLayout.setOnClickListener(v -> {
                 startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
+            });
+        }
+
+        if (btnNotice != null) {
+            btnNotice.setOnClickListener(v -> {
+                if ("Teacher".equals(userRole)) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Send Announcement to Students");
+                    final EditText input = new EditText(this);
+                    input.setHint("Type announcement message here...");
+                    builder.setView(input);
+                    builder.setPositiveButton("Send", (dialog, which) -> {
+                        String msg = input.getText().toString().trim();
+                        if (!msg.isEmpty()) {
+                            AnnouncementStore.addAnnouncement(this, msg);
+                            Snackbar.make(recyclerView, "Announcement sent successfully!", Snackbar.LENGTH_SHORT).show();
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+                    builder.show();
+                } else {
+                    List<String> notices = AnnouncementStore.getAnnouncements(this);
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < notices.size(); i++) {
+                        sb.append((i + 1)).append(". ").append(notices.get(i)).append("\n\n");
+                    }
+                    new AlertDialog.Builder(this)
+                            .setTitle("My Notifications & Announcements")
+                            .setMessage(sb.toString().trim())
+                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                            .show();
+                }
+            });
+        }
+
+        if (btnRoutine != null) {
+            btnRoutine.setOnClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Weekly Class Routine")
+                        .setMessage(RoutineStore.getWeeklyRoutine())
+                        .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                        .show();
             });
         }
 
@@ -196,7 +307,11 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         btnFilterPresent.setOnClickListener(v -> filterByStatus("Present"));
         btnFilterAll.setOnClickListener(v -> {
             etSearch.setText("");
-            loadDataIntoAdapter(fullRecordList);
+            if ("Teacher".equals(userRole) && spinnerCourseFilter != null && spinnerCourseFilter.getSelectedItem() != null) {
+                filterByCourse(spinnerCourseFilter.getSelectedItem().toString());
+            } else {
+                loadDataIntoAdapter(fullRecordList);
+            }
         });
 
         btnTakeAttendance.setOnClickListener(v -> {
@@ -225,13 +340,6 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         });
 
         btnShare.setOnClickListener(v -> {
-            int total = recordList.size();
-            int present = 0;
-            for (AttendanceRecord r : recordList) {
-                if (r.getStatus() != null && (r.getStatus().equalsIgnoreCase("Present") || r.getStatus().equalsIgnoreCase("P"))) {
-                    present++;
-                }
-            }
             StringBuilder csv = new StringBuilder("ID,Student,Subject,Date,Status\n");
             for (AttendanceRecord r : recordList) {
                 csv.append(r.getId()).append(",").append(r.getStudentName()).append(",").append(r.getSubject()).append(",").append(r.getDate()).append(",").append(r.getStatus()).append("\n");
@@ -262,6 +370,14 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         if (sensorManager != null) {
             proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
         }
+    }
+
+    private void addCourseVisibilityGone() {
+        if (btnAddCourse != null) addCourseVisibilityGoneHelper();
+    }
+
+    private void addCourseVisibilityGoneHelper() {
+        if (btnAddCourse != null) btnAddCourse.setVisibility(View.GONE);
     }
 
     @Override
@@ -297,8 +413,19 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
 
     private void filterRecords(String query) {
         List<AttendanceRecord> filtered = new ArrayList<>();
+        if ("Student".equals(userRole)) {
+            // In student mode, search through summary records or course names
+            for (AttendanceRecord r : fullRecordList) {
+                if (r.getSubject() != null && r.getSubject().toLowerCase().contains(query.toLowerCase())) {
+                    filtered.add(r);
+                }
+            }
+            loadStudentCourseSummaries(filtered);
+            return;
+        }
+
         for (AttendanceRecord r : fullRecordList) {
-            String matchField = "Teacher".equals(userRole) ? r.getStudentName() : r.getSubject();
+            String matchField = r.getStudentName();
             if (matchField != null && matchField.toLowerCase().contains(query.toLowerCase())) {
                 filtered.add(r);
             }
@@ -313,7 +440,11 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                 filtered.add(r);
             }
         }
-        loadDataIntoAdapter(filtered);
+        if ("Student".equals(userRole)) {
+            loadStudentCourseSummaries(filtered);
+        } else {
+            loadDataIntoAdapter(filtered);
+        }
     }
 
     private void filterByCourse(String courseName) {
@@ -324,6 +455,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
             }
         }
         loadDataIntoAdapter(filtered);
+        updateCourseSpecificSummary(filtered);
     }
 
     private void loadDataIntoAdapter(List<AttendanceRecord> list) {
@@ -333,9 +465,102 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         updateSummary();
     }
 
+    private void loadStudentCourseSummaries(List<AttendanceRecord> records) {
+        List<CourseSummaryAdapter.CourseSummary> summaries = new ArrayList<>();
+        List<Course> courses = CourseStore.getCourses(this);
+        for (Course c : courses) {
+            List<AttendanceRecord> courseRecords = new ArrayList<>();
+            int present = 0;
+            int absent = 0;
+            for (AttendanceRecord r : records) {
+                if (r.getSubject() != null && r.getSubject().equalsIgnoreCase(c.getCourseName())) {
+                    courseRecords.add(r);
+                    String status = r.getStatus() != null ? r.getStatus().toLowerCase() : "";
+                    if (status.contains("present") || status.contains("p")) present++;
+                    else absent++;
+                }
+            }
+            int total = courseRecords.size();
+            if (total > 0) {
+                CourseSummaryAdapter.CourseSummary cs = new CourseSummaryAdapter.CourseSummary();
+                cs.courseName = c.getCourseName();
+                cs.total = total;
+                cs.present = present;
+                cs.absent = absent;
+                cs.percentage = ((double) present / total) * 100;
+                cs.records = courseRecords;
+                summaries.add(cs);
+            }
+        }
+
+        Set<String> processedSubjects = new HashSet<>();
+        for (Course c : courses) processedSubjects.add(c.getCourseName().toLowerCase());
+
+        for (AttendanceRecord r : records) {
+            if (r.getSubject() != null && !processedSubjects.contains(r.getSubject().toLowerCase())) {
+                String sub = r.getSubject();
+                processedSubjects.add(sub.toLowerCase());
+                List<AttendanceRecord> courseRecords = new ArrayList<>();
+                int present = 0;
+                int absent = 0;
+                for (AttendanceRecord ar : records) {
+                    if (ar.getSubject() != null && ar.getSubject().equalsIgnoreCase(sub)) {
+                        courseRecords.add(ar);
+                        String status = ar.getStatus() != null ? ar.getStatus().toLowerCase() : "";
+                        if (status.contains("present") || status.contains("p")) present++;
+                        else absent++;
+                    }
+                }
+                int total = courseRecords.size();
+                CourseSummaryAdapter.CourseSummary cs = new CourseSummaryAdapter.CourseSummary();
+                cs.courseName = sub;
+                cs.total = total;
+                cs.present = present;
+                cs.absent = absent;
+                cs.percentage = total > 0 ? ((double) present / total) * 100 : 0.0;
+                cs.records = courseRecords;
+                summaries.add(cs);
+            }
+        }
+
+        CourseSummaryAdapter courseAdapter = new CourseSummaryAdapter(this, summaries, summary -> {
+            StringBuilder sb = new StringBuilder();
+            for (AttendanceRecord r : summary.records) {
+                sb.append("Date: ").append(r.getDate()).append(" | Status: ").append(r.getStatus()).append("\n");
+            }
+            new AlertDialog.Builder(this)
+                    .setTitle(summary.courseName + " - Attendance History")
+                    .setMessage(sb.length() > 0 ? sb.toString().trim() : "No history found.")
+                    .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
+                    .show();
+        });
+        recyclerView.setAdapter(courseAdapter);
+        updateSummary();
+    }
+
+    private void updateCourseSpecificSummary(List<AttendanceRecord> courseRecords) {
+        Set<String> uniqueStudents = new HashSet<>();
+        int presentCount = 0;
+        int absentCount = 0;
+
+        if (courseRecords != null) {
+            for (AttendanceRecord r : courseRecords) {
+                if (r.getStudentName() != null) uniqueStudents.add(r.getStudentName().trim().toLowerCase());
+                String status = r.getStatus() != null ? r.getStatus().toLowerCase() : "";
+                if (status.contains("present") || status.contains("p")) {
+                    presentCount++;
+                } else {
+                    absentCount++;
+                }
+            }
+        }
+
+        if (tvTotalStudents != null) tvTotalStudents.setText(String.valueOf(uniqueStudents.size()));
+        if (tvTodayPresent != null) tvTodayPresent.setText(String.valueOf(presentCount));
+        if (tvTodayAbsent != null) tvTodayAbsent.setText(String.valueOf(absentCount));
+    }
+
     private void updateSummary() {
-        int totalRecords = fullRecordList != null ? fullRecordList.size() : 0;
-        int present = 0;
         Set<String> uniqueStudents = new HashSet<>();
         String todayStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         int todayPresent = 0;
@@ -346,9 +571,6 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                 if (r.getStudentName() != null) uniqueStudents.add(r.getStudentName().trim().toLowerCase());
                 String status = r.getStatus() != null ? r.getStatus().toLowerCase() : "";
                 boolean isPresent = status.contains("present") || status.contains("p");
-                if (isPresent) {
-                    present++;
-                }
 
                 if (r.getDate() != null && r.getDate().equals(todayStr)) {
                     if (isPresent) todayPresent++;
@@ -356,22 +578,35 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                 }
             }
         }
-        double percentage = totalRecords > 0 ? ((double) present / totalRecords) * 100 : 0.0;
 
         if (tvTotalCourses != null) tvTotalCourses.setText(String.valueOf(CourseStore.getCourses(this).size()));
         if (tvTotalStudents != null) tvTotalStudents.setText(String.valueOf(uniqueStudents.size()));
         if (tvTodayPresent != null) tvTodayPresent.setText(String.valueOf(todayPresent));
         if (tvTodayAbsent != null) tvTodayAbsent.setText(String.valueOf(todayAbsent));
-        if (tvOverallPercentage != null) tvOverallPercentage.setText(String.format("%.1f%%", percentage));
 
         if (tvSummaryTitle != null) {
-            tvSummaryTitle.setText(userRole.equals("Teacher") ? "Teacher Attendance Overview & Analytics" : "My Attendance Status (" + studentId + ")");
+            tvSummaryTitle.setText(userRole.equals("Teacher") ? "Individual Student Attendance Tracking" : "My Attendance Status (" + studentId + ")");
         }
 
-        if (tvEligibilityWarning != null) {
-            if (totalRecords > 0 && percentage < 75.0) {
+        // Student 75% Eligibility Warning & Status: ELIGIBLE / NOT ELIGIBLE
+        if (tvEligibilityWarning != null && "Student".equals(userRole)) {
+            int total = fullRecordList != null ? fullRecordList.size() : 0;
+            int present = 0;
+            for (AttendanceRecord r : fullRecordList) {
+                String status = r.getStatus() != null ? r.getStatus().toLowerCase() : "";
+                if (status.contains("present") || status.contains("p")) present++;
+            }
+            double pct = total > 0 ? ((double) present / total) * 100 : 0.0;
+            if (total > 0 && pct < 75.0) {
                 tvEligibilityWarning.setVisibility(View.VISIBLE);
-                tvEligibilityWarning.setText("Warning: Attendance is " + String.format("%.1f", percentage) + "% (Below 75% eligibility requirement!)");
+                tvEligibilityWarning.setText("Status: NOT ELIGIBLE ❌ (Attendance: " + String.format(Locale.getDefault(), "%.1f", pct) + "% < 75%)");
+                tvEligibilityWarning.setBackgroundColor(0xFFFFEBEE); // Light red
+                tvEligibilityWarning.setTextColor(0xFFC62828); // Dark red
+            } else if (total > 0) {
+                tvEligibilityWarning.setVisibility(View.VISIBLE);
+                tvEligibilityWarning.setText("Status: ELIGIBLE ✅ (Attendance: " + String.format(Locale.getDefault(), "%.1f", pct) + "% >= 75%)");
+                tvEligibilityWarning.setBackgroundColor(0xFFE8F5E9); // Light green
+                tvEligibilityWarning.setTextColor(0xFF2E7D32); // Dark green
             } else {
                 tvEligibilityWarning.setVisibility(View.GONE);
             }
@@ -426,10 +661,25 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                     fullRecordList.add(r);
                 }
             }
+        } else if ("Teacher".equals(userRole) && !userEmail.isEmpty()) {
+            for (AttendanceRecord r : allRecords) {
+                if (r.getTeacherEmail() != null && r.getTeacherEmail().equalsIgnoreCase(userEmail)) {
+                    fullRecordList.add(r);
+                }
+            }
         } else {
             fullRecordList.addAll(allRecords);
         }
-        loadDataIntoAdapter(fullRecordList);
+
+        if ("Student".equals(userRole)) {
+            loadStudentCourseSummaries(fullRecordList);
+        } else {
+            if (spinnerCourseFilter != null && spinnerCourseFilter.getSelectedItem() != null) {
+                filterByCourse(spinnerCourseFilter.getSelectedItem().toString());
+            } else {
+                loadDataIntoAdapter(fullRecordList);
+            }
+        }
     }
 
     private void showRecordDialog(AttendanceRecord record) {

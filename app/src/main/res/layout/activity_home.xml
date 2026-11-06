@@ -26,7 +26,7 @@
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- Teacher Welcome Profile Header -->
+        <!-- Teacher/Student Welcome Profile Header -->
         <LinearLayout
             android:id="@+id/profileHeaderLayout"
             android:layout_width="match_parent"
@@ -52,7 +52,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_weight="1"
-                android:text="Welcome, Teacher"
+                android:text="Welcome"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -68,7 +68,63 @@
 
         </LinearLayout>
 
-        <!-- Summary & Analytics Card -->
+        <!-- Today's Schedule Card (Teacher Only - Compact Button) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardTodaySchedule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            app:cardBackgroundColor="@color/card_background"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Today's Class Schedule"
+                        android:textColor="@color/primary_navy"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTodayDateBanner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Tap to view active classes &amp; rooms"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnViewSchedule"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:backgroundTint="@color/accent_teal"
+                    android:text="View Schedule"
+                    android:textAllCaps="false"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Summary & Overview Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardSummary"
             android:layout_width="match_parent"
@@ -88,7 +144,7 @@
                     android:id="@+id/tvSummaryTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Attendance Analytics &amp; Summary"
+                    android:text="Attendance Overview &amp; Analytics"
                     android:textColor="@color/primary_navy"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -106,7 +162,7 @@
                     android:textStyle="bold"
                     android:visibility="gone" />
 
-                <!-- 5 Metrics Grid -->
+                <!-- 4 Core Metrics Grid -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -115,7 +171,7 @@
                     android:gravity="center"
                     android:orientation="horizontal">
 
-                    <!-- Total Courses -->
+                    <!-- Courses -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -127,18 +183,18 @@
                             android:layout_height="wrap_content"
                             android:text="Courses"
                             android:textColor="@color/text_muted"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                         <TextView
                             android:id="@+id/tvTotalCourses"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="4"
                             android:textColor="@color/text_dark"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Total Students -->
+                    <!-- Students -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -150,18 +206,18 @@
                             android:layout_height="wrap_content"
                             android:text="Students"
                             android:textColor="@color/text_muted"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                         <TextView
                             android:id="@+id/tvTotalStudents"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textColor="@color/text_dark"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Today Present -->
+                    <!-- Present Logs -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -173,18 +229,18 @@
                             android:layout_height="wrap_content"
                             android:text="Present"
                             android:textColor="@color/text_muted"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                         <TextView
                             android:id="@+id/tvTodayPresent"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textColor="@color/success_green"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Today Absent -->
+                    <!-- Absent Logs -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -196,37 +252,14 @@
                             android:layout_height="wrap_content"
                             android:text="Absent"
                             android:textColor="@color/text_muted"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                         <TextView
                             android:id="@+id/tvTodayAbsent"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textColor="@color/warning_red"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- Overall % -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Overall %"
-                            android:textColor="@color/text_muted"
-                            android:textSize="11sp" />
-                        <TextView
-                            android:id="@+id/tvOverallPercentage"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0%"
-                            android:textColor="@color/accent_teal"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -235,7 +268,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Course Filter & Search Bar -->
+        <!-- Course Filter, Add Course Button & Search Bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -245,27 +278,37 @@
 
             <Spinner
                 android:id="@+id/spinnerCourseFilter"
-                android:layout_width="140dp"
+                android:layout_width="100dp"
                 android:layout_height="48dp"
                 android:background="@drawable/bg_search" />
+
+            <Button
+                android:id="@+id/btnAddCourse"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:backgroundTint="@color/accent_teal"
+                android:text="+ Course"
+                android:textAllCaps="false"
+                android:textSize="11sp" />
 
             <EditText
                 android:id="@+id/etSearch"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_search"
-                android:hint="Search student..."
+                android:hint="Search..."
                 android:inputType="text"
-                android:paddingHorizontal="12dp"
-                android:textSize="14sp" />
+                android:paddingHorizontal="8dp"
+                android:textSize="13sp" />
 
             <Button
                 android:id="@+id/btnFilterPresent"
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="2dp"
                 android:backgroundTint="@color/accent_teal"
                 android:text="Present"
                 android:textAllCaps="false"
@@ -297,6 +340,26 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnNotice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:backgroundTint="@color/accent_teal"
+                    android:text="Notifications"
+                    android:textAllCaps="false"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnRoutine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:backgroundTint="@color/accent_teal"
+                    android:text="Class Routine"
+                    android:textAllCaps="false"
+                    android:textSize="12sp" />
 
                 <Button
                     android:id="@+id/btnCall"
