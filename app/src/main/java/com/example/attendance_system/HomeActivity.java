@@ -62,6 +62,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
     private TextView tvStudentFullName, tvStatTotal, tvStatPresent, tvStatAbsent, tvStatLate, tvStudentEligibility;
     private RecyclerView recyclerViewStudentCourses;
     private Button btnStudentLogout, btnStudentRoutine, btnStudentReport, btnStudentNotifications, btnStudentDownload;
+    private View cardStudentProfile;
 
     private AttendanceAdapter adapter;
     private List<AttendanceRecord> recordList;
@@ -125,12 +126,24 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         btnStudentReport = findViewById(R.id.btnStudentReport);
         btnStudentNotifications = findViewById(R.id.btnStudentNotifications);
         btnStudentDownload = findViewById(R.id.btnStudentDownload);
+        cardStudentProfile = findViewById(R.id.cardStudentProfile);
+
+        SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
+        String studentName = prefs.getString("student_name", studentId.isEmpty() ? "Student User" : studentId);
+        String dept = prefs.getString("student_dept", "CSE");
+        String sem = prefs.getString("student_semester", "8th Semester");
 
         if (tvStudentFullName != null) {
-            tvStudentFullName.setText("Welcome, " + (studentId.isEmpty() ? "Student" : studentId));
+            tvStudentFullName.setText("Welcome, " + studentName);
         }
         if (tvStudentProfileInfo != null) {
-            tvStudentProfileInfo.setText("ID: " + (studentId.isEmpty() ? "CSE-101" : studentId) + " | Dept: CSE | Semester: 8th");
+            tvStudentProfileInfo.setText("ID: " + studentId + " | Dept: " + dept + " | " + sem + " (Tap to Edit Profile)");
+        }
+
+        if (cardStudentProfile != null) {
+            cardStudentProfile.setOnClickListener(v -> {
+                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
+            });
         }
 
         if (recyclerViewStudentCourses != null) {
@@ -253,9 +266,10 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                 teacherName = teacherName.substring(0, 1).toUpperCase() + teacherName.substring(1);
             }
         }
+        final String finalTeacherName = teacherName;
 
         if (toolbar != null) {
-            toolbar.setTitle("Teacher Dashboard (" + teacherName + ")");
+            toolbar.setTitle("Teacher Dashboard (" + finalTeacherName + ")");
         }
 
         if (cardTodaySchedule != null) cardTodaySchedule.setVisibility(View.VISIBLE);
@@ -339,7 +353,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         });
 
         if (tvWelcomeTeacher != null) {
-            tvWelcomeTeacher.setText("Welcome, " + teacherName);
+            tvWelcomeTeacher.setText("Welcome, " + finalTeacherName);
         }
 
         View profileHeaderLayout = findViewById(R.id.profileHeaderLayout);
@@ -360,7 +374,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                 builder.setPositiveButton("Send", (dialog, which) -> {
                     String msg = input.getText().toString().trim();
                     if (!msg.isEmpty()) {
-                        AnnouncementStore.addAnnouncement(this, msg);
+                        AnnouncementStore.addAnnouncement(this, finalTeacherName + ": " + msg);
                         Snackbar.make(recyclerView, "Announcement sent successfully!", Snackbar.LENGTH_SHORT).show();
                     }
                 });
@@ -492,7 +506,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
             if (event.values[0] < proximitySensor.getMaximumRange()) {
-                // Sensor active in background for requirement #11 without popping up disruptive messages during editing
+                // Sensor active
             }
         }
     }
