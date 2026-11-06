@@ -2,6 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_light"
     android:fillViewport="true"
     android:padding="24dp">
 
@@ -65,7 +66,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Student Name / ID (e.g. Rahim)"
-                android:inputType="text" />
+                android:inputType="text"
+                android:textColor="@color/text_dark" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -79,7 +81,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/email"
-                android:inputType="textEmailAddress" />
+                android:inputType="textEmailAddress"
+                android:textColor="@color/text_dark" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -93,7 +96,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/password"
-                android:inputType="textPassword" />
+                android:inputType="textPassword"
+                android:textColor="@color/text_dark" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -102,8 +106,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <CheckBox
                 android:id="@+id/cbRememberMe"
@@ -131,7 +135,9 @@
             android:backgroundTint="@color/primary_navy"
             android:text="@string/login"
             android:textAllCaps="false"
-            android:textSize="16sp" />
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvGoToRegister"

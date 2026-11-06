@@ -27,7 +27,8 @@ public class AttendanceLocalStore {
                         obj.optString("subject"),
                         obj.optString("date"),
                         obj.optString("status"),
-                        obj.optString("photoUri")
+                        obj.optString("photoUri"),
+                        obj.optString("teacherEmail", "")
                 );
                 list.add(r);
             }
@@ -70,6 +71,7 @@ public class AttendanceLocalStore {
                 obj.put("date", r.getDate());
                 obj.put("status", r.getStatus());
                 obj.put("photoUri", r.getPhotoUri());
+                obj.put("teacherEmail", r.getTeacherEmail() != null ? r.getTeacherEmail() : "");
                 arr.put(obj);
             }
             SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);

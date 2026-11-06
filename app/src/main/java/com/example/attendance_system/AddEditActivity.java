@@ -2,6 +2,7 @@ package com.example.attendance_system;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,9 +11,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,7 +34,7 @@ public class AddEditActivity extends AppCompatActivity {
     private Button btnCamera, btnGallery, btnSave;
     private TextInputEditText etStudentName, etDate;
     private Spinner spinnerCourses;
-    private RadioButton rbPresent;
+    private RadioButton rbPresent, rbLate, rbAbsent;
 
     private DatabaseReference dbRef;
     private String recordId = "";
@@ -58,6 +57,8 @@ public class AddEditActivity extends AppCompatActivity {
         etDate = findViewById(R.id.etDate);
         spinnerCourses = findViewById(R.id.spinnerCourses);
         rbPresent = findViewById(R.id.rbPresent);
+        rbLate = findViewById(R.id.rbLate);
+        rbAbsent = findViewById(R.id.rbAbsent);
 
         try {
             dbRef = FirebaseDatabase.getInstance().getReference("attendance_records");
@@ -65,7 +66,6 @@ public class AddEditActivity extends AppCompatActivity {
             dbRef = null;
         }
 
-        // Load Courses into Spinner
         courseList = CourseStore.getCourses(this);
         String[] courseNames = new String[courseList.size()];
         for (int i = 0; i < courseList.size(); i++) {
@@ -74,12 +74,21 @@ public class AddEditActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, courseNames);
         spinnerCourses.setAdapter(adapter);
 
-        // Default to today's date if new record
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("preselected_subject")) {
+            String preSubject = intent.getStringExtra("preselected_subject");
+            for (int i = 0; i < courseList.size(); i++) {
+                if (courseList.get(i).getCourseName().equalsIgnoreCase(preSubject)) {
+                    spinnerCourses.setSelection(i);
+                    break;
+                }
+            }
+        }
+
         final Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         etDate.setText(sdf.format(calendar.getTime()));
 
-        // Date Picker with Future Date Validation
         etDate.setOnClickListener(v -> {
             int year = calendar.get(Calendar.YEAR);
             int month = calendar.get(Calendar.MONTH);
@@ -88,7 +97,6 @@ public class AddEditActivity extends AppCompatActivity {
             DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, selectedYear, selectedMonth, selectedDay) -> {
                 Calendar selectedCalendar = Calendar.getInstance();
                 selectedCalendar.set(selectedYear, selectedMonth, selectedDay);
-                // Prevent future dates
                 if (selectedCalendar.after(Calendar.getInstance())) {
                     Snackbar.make(etDate, "Future date attendance cannot be taken!", Snackbar.LENGTH_LONG).show();
                     return;
@@ -97,13 +105,10 @@ public class AddEditActivity extends AppCompatActivity {
                 etDate.setText(formattedDate);
             }, year, month, day);
 
-            // Max date is today
             datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
             datePickerDialog.show();
         });
 
-        // Check if editing existing record
-        Intent intent = getIntent();
         if (intent != null && intent.hasExtra("id")) {
             recordId = intent.getStringExtra("id");
             etStudentName.setText(intent.getStringExtra("name"));
@@ -117,8 +122,9 @@ public class AddEditActivity extends AppCompatActivity {
             }
             String status = intent.getStringExtra("status");
             if (status != null && status.equalsIgnoreCase("Absent")) {
-                RadioButton rbAbsent = findViewById(R.id.rbAbsent);
                 if (rbAbsent != null) rbAbsent.setChecked(true);
+            } else if (status != null && status.equalsIgnoreCase("Late")) {
+                if (rbLate != null) rbLate.setChecked(true);
             } else {
                 rbPresent.setChecked(true);
             }
@@ -180,9 +186,9 @@ public class AddEditActivity extends AppCompatActivity {
     private void saveRecord() {
         String name = etStudentName.getText() != null ? etStudentName.getText().toString().trim() : "";
         int selectedCourseIndex = spinnerCourses.getSelectedItemPosition();
-        String subject = selectedCourseIndex >= 0 && selectedCourseIndex < courseList.size() ? courseList.get(selectedCourseIndex).getCourseName() : "Android Development";
+        String subject = selectedCourseIndex >= 0 && selectedCourseIndex < courseList.size() ? courseList.get(selectedCourseIndex).getCourseName() : "Software Engineering";
         String date = etDate.getText() != null ? etDate.getText().toString().trim() : "";
-        String status = rbPresent.isChecked() ? "Present" : "Absent";
+        String status = rbPresent.isChecked() ? "Present" : (rbLate.isChecked() ? "Late" : "Absent");
 
         if (name.isEmpty()) {
             etStudentName.setError("Student name is required");
@@ -196,13 +202,14 @@ public class AddEditActivity extends AppCompatActivity {
             return;
         }
 
-        // Duplicate prevention check: same student name, course, and date
+        SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
+        String teacherEmail = prefs.getString("logged_email", "teacher@university.edu");
+
         List<AttendanceRecord> existingRecords = AttendanceLocalStore.getRecords(this);
         for (AttendanceRecord r : existingRecords) {
             if (r.getStudentName().equalsIgnoreCase(name) &&
                 r.getSubject().equalsIgnoreCase(subject) &&
                 r.getDate().equalsIgnoreCase(date)) {
-                // If it's a new entry (not editing), update the existing record ID instead of creating duplicate
                 if (recordId.isEmpty()) {
                     recordId = r.getId();
                 }
@@ -214,12 +221,10 @@ public class AddEditActivity extends AppCompatActivity {
             recordId = UUID.randomUUID().toString();
         }
 
-        AttendanceRecord record = new AttendanceRecord(recordId, name, subject, date, status, photoUriStr);
+        AttendanceRecord record = new AttendanceRecord(recordId, name, subject, date, status, photoUriStr, teacherEmail);
 
-        // Save locally
         AttendanceLocalStore.saveRecord(this, record);
 
-        // Push to Firebase if connected
         if (dbRef != null) {
             try {
                 dbRef.child(recordId).setValue(record);

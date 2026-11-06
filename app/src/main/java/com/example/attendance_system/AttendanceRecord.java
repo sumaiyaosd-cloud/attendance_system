@@ -7,6 +7,7 @@ public class AttendanceRecord {
     private String date;
     private String status; // Present / Absent / Late
     private String photoUri;
+    private String teacherEmail;
 
     public AttendanceRecord() {
         // Required for Firebase Realtime Database
@@ -19,6 +20,17 @@ public class AttendanceRecord {
         this.date = date;
         this.status = status;
         this.photoUri = photoUri;
+        this.teacherEmail = "";
+    }
+
+    public AttendanceRecord(String id, String studentName, String subject, String date, String status, String photoUri, String teacherEmail) {
+        this.id = id;
+        this.studentName = studentName;
+        this.subject = subject;
+        this.date = date;
+        this.status = status;
+        this.photoUri = photoUri;
+        this.teacherEmail = teacherEmail;
     }
 
     public String getId() {
@@ -67,5 +79,13 @@ public class AttendanceRecord {
 
     public void setPhotoUri(String photoUri) {
         this.photoUri = photoUri;
+    }
+
+    public String getTeacherEmail() {
+        return teacherEmail;
+    }
+
+    public void setTeacherEmail(String teacherEmail) {
+        this.teacherEmail = teacherEmail;
     }
 }
