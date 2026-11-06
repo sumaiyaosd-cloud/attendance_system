@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,9 +14,9 @@ import java.util.List;
 
 public class CourseSummaryAdapter extends RecyclerView.Adapter<CourseSummaryAdapter.ViewHolder> {
 
-    private Context context;
-    private List<CourseSummary> summaryList;
-    private OnCourseClickListener listener;
+    private final Context context;
+    private final List<CourseSummary> summaryList;
+    private final OnCourseClickListener listener;
 
     public interface OnCourseClickListener {
         void onCourseClick(CourseSummary summary);
@@ -49,6 +50,7 @@ public class CourseSummaryAdapter extends RecyclerView.Adapter<CourseSummaryAdap
         holder.tvCourseName.setText(cs.courseName);
         holder.tvCoursePercentage.setText(String.format("%.1f%%", cs.percentage));
         holder.tvCourseStats.setText(String.format("Present: %d | Absent: %d (Total: %d)", cs.present, cs.absent, cs.total));
+        holder.progressBarCourse.setProgress((int) cs.percentage);
 
         if (cs.percentage >= 75.0) {
             holder.tvCourseEligibility.setText("Status: ELIGIBLE ✅");
@@ -72,6 +74,7 @@ public class CourseSummaryAdapter extends RecyclerView.Adapter<CourseSummaryAdap
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvCourseName, tvCoursePercentage, tvCourseStats, tvCourseEligibility;
+        ProgressBar progressBarCourse;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -79,6 +82,7 @@ public class CourseSummaryAdapter extends RecyclerView.Adapter<CourseSummaryAdap
             tvCoursePercentage = itemView.findViewById(R.id.tvCoursePercentage);
             tvCourseStats = itemView.findViewById(R.id.tvCourseStats);
             tvCourseEligibility = itemView.findViewById(R.id.tvCourseEligibility);
+            progressBarCourse = itemView.findViewById(R.id.progressBarCourse);
         }
     }
 }

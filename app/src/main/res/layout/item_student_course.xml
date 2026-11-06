@@ -46,16 +46,27 @@
             android:id="@+id/tvCourseStats"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:text="Present: 4 | Absent: 1 (Total Classes: 5)"
             android:textColor="@color/text_muted"
             android:textSize="13sp" />
+
+        <!-- Visual Graphical Bar Chart for Subject -->
+        <ProgressBar
+            android:id="@+id/progressBarCourse"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_marginTop="10dp"
+            android:max="100"
+            android:progress="80"
+            android:progressTint="@color/accent_teal" />
 
         <TextView
             android:id="@+id/tvCourseEligibility"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:background="#E8F5E9"
             android:paddingHorizontal="8dp"
             android:paddingVertical="4dp"
