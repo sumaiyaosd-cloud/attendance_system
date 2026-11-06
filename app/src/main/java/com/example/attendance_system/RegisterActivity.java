@@ -7,14 +7,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.FirebaseDatabase;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -55,10 +54,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         btnRegister.setOnClickListener(v -> registerUser());
 
-        tvGoToLogin.setOnClickListener(v -> {
-            startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
-            finish();
-        });
+        tvGoToLogin.setOnClickListener(v -> finish());
     }
 
     private void registerUser() {
@@ -73,16 +69,20 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        if (password.length() < 6) {
-            etRegPassword.setError("Password must be at least 6 characters");
+        if (password.isEmpty()) {
+            etRegPassword.setError("Password is required");
             etRegPassword.requestFocus();
             return;
         }
 
         if ("Student".equals(role) && studentId.isEmpty()) {
-            etStudentId.setError("Student Name / ID is required");
+            etStudentId.setError("Student Name / ID is required for unique identification");
             etStudentId.requestFocus();
             return;
+        }
+
+        if ("Teacher".equals(role)) {
+            studentId = ""; // Teachers don't need student ID
         }
 
         SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
@@ -93,30 +93,17 @@ public class RegisterActivity extends AppCompatActivity {
                 .putBoolean("remember_me", true)
                 .apply();
 
-        if (mAuth == null) {
-            Toast.makeText(RegisterActivity.this, "Registered as " + role + "!", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
-            finish();
-            return;
+        Snackbar.make(btnRegister, "Registration Successful (" + role + ")!", Snackbar.LENGTH_SHORT).show();
+
+        if (mAuth != null) {
+            try {
+                mAuth.createUserWithEmailAndPassword(email, password);
+            } catch (Exception ignored) {
+            }
         }
 
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful() && task.getResult() != null && task.getResult().getUser() != null) {
-                        String userId = task.getResult().getUser().getUid();
-                        try {
-                            FirebaseDatabase.getInstance().getReference("users")
-                                    .child(userId)
-                                    .child("role")
-                                    .setValue(role);
-                        } catch (Exception ignored) {
-                        }
-                    }
-
-                    Toast.makeText(RegisterActivity.this, "Registered as " + role + "!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
-                    startActivity(intent);
-                    finish();
-                });
+        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
+        startActivity(intent);
+        finish();
     }
 }

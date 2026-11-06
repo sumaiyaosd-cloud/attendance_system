@@ -1,14 +1,12 @@
 package com.example.attendance_system;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 public class SplashActivity extends AppCompatActivity {
 
@@ -19,8 +17,9 @@ public class SplashActivity extends AppCompatActivity {
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             try {
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                if (currentUser != null) {
+                SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
+                boolean remember = prefs.getBoolean("remember_me", false);
+                if (remember && prefs.getString("logged_email", null) != null) {
                     Intent intent = new Intent(SplashActivity.this, HomeActivity.class);
                     startActivity(intent);
                 } else {
@@ -28,7 +27,6 @@ public class SplashActivity extends AppCompatActivity {
                     startActivity(intent);
                 }
             } catch (Exception e) {
-                // Fallback if google-services.json is missing or Firebase not initialized
                 Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
                 startActivity(intent);
             }
