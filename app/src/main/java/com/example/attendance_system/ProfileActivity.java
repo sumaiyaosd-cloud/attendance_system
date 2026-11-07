@@ -8,8 +8,6 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.widget.SwitchCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
@@ -21,7 +19,6 @@ public class ProfileActivity extends AppCompatActivity {
     private TextInputEditText etProfileName, etProfileIdOrEmail, etDepartment, etSemester;
     private TextInputLayout tilDepartment, tilSemester;
     private Button btnSaveProfile, btnHelp, btnLogoutProfile;
-    private SwitchCompat switchDarkMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,12 +34,9 @@ public class ProfileActivity extends AppCompatActivity {
         btnSaveProfile = findViewById(R.id.btnSaveProfile);
         btnHelp = findViewById(R.id.btnHelp);
         btnLogoutProfile = findViewById(R.id.btnLogoutProfile);
-        switchDarkMode = findViewById(R.id.switchDarkMode);
 
         SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
         String role = prefs.getString("user_role", "Teacher");
-        boolean isDark = prefs.getBoolean("dark_mode", false);
-        switchDarkMode.setChecked(isDark);
 
         if ("Student".equals(role)) {
             tilDepartment.setVisibility(View.VISIBLE);
@@ -63,11 +57,6 @@ public class ProfileActivity extends AppCompatActivity {
             etProfileName.setText(prefs.getString("teacher_name", "Prof. Teacher"));
             etProfileIdOrEmail.setText(prefs.getString("logged_email", "teacher@university.edu"));
         }
-
-        switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            prefs.edit().putBoolean("dark_mode", isChecked).apply();
-            AppCompatDelegate.setDefaultNightMode(isChecked ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
-        });
 
         btnSaveProfile.setOnClickListener(v -> {
             String name = etProfileName.getText() != null ? etProfileName.getText().toString().trim() : "";
