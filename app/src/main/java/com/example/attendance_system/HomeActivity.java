@@ -58,11 +58,11 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
     private Spinner spinnerCourseFilter;
     private CardView cardTodaySchedule;
 
-    // Student dashboard views (Features 1-10)
-    private TextView tvStudentFullName, tvStatTotal, tvStatPresent, tvStatAbsent, tvStatLate, tvStudentEligibility;
+    // Student dashboard views
+    private TextView tvStudentFullName;
     private RecyclerView recyclerViewStudentCourses;
     private Button btnStudentLogout, btnStudentRoutine, btnStudentReport, btnStudentNotifications, btnStudentDownload;
-    private View cardStudentProfile;
+    private View cardStudentProfile, cardStudentTodaySchedule;
 
     private AttendanceAdapter adapter;
     private List<AttendanceRecord> recordList;
@@ -115,11 +115,6 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
     private void initStudentDashboard() {
         tvStudentFullName = findViewById(R.id.tvStudentFullName);
         TextView tvStudentProfileInfo = findViewById(R.id.tvStudentProfileInfo);
-        tvStatTotal = findViewById(R.id.tvStatTotal);
-        tvStatPresent = findViewById(R.id.tvStatPresent);
-        tvStatAbsent = findViewById(R.id.tvStatAbsent);
-        tvStatLate = findViewById(R.id.tvStatLate);
-        tvStudentEligibility = findViewById(R.id.tvStudentEligibility);
         recyclerViewStudentCourses = findViewById(R.id.recyclerViewStudentCourses);
         btnStudentLogout = findViewById(R.id.btnStudentLogout);
         btnStudentRoutine = findViewById(R.id.btnStudentRoutine);
@@ -127,6 +122,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         btnStudentNotifications = findViewById(R.id.btnStudentNotifications);
         btnStudentDownload = findViewById(R.id.btnStudentDownload);
         cardStudentProfile = findViewById(R.id.cardStudentProfile);
+        cardStudentTodaySchedule = findViewById(R.id.cardStudentTodaySchedule);
 
         SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
         String studentName = prefs.getString("student_name", studentId.isEmpty() ? "Student User" : studentId);
@@ -146,6 +142,22 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
             });
         }
 
+        if (cardStudentTodaySchedule != null) {
+            cardStudentTodaySchedule.setOnClickListener(v -> {
+                List<TodayScheduleStore.ScheduledClass> todayClasses = TodayScheduleStore.getTodayClasses();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < todayClasses.size(); i++) {
+                    TodayScheduleStore.ScheduledClass sc = todayClasses.get(i);
+                    sb.append((i + 1)).append(". ").append(sc.courseName).append(" (").append(sc.courseCode).append(")\nTime: ").append(sc.time).append(" | Room: ").append(sc.room).append("\n\n");
+                }
+                new AlertDialog.Builder(this)
+                        .setTitle("Remaining Classes Today")
+                        .setMessage(sb.length() > 0 ? sb.toString().trim() : "No classes scheduled for today.")
+                        .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
+                        .show();
+            });
+        }
+
         if (recyclerViewStudentCourses != null) {
             recyclerViewStudentCourses.setLayoutManager(new LinearLayoutManager(this));
         }
@@ -153,7 +165,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
         if (btnStudentRoutine != null) {
             btnStudentRoutine.setOnClickListener(v -> {
                 new AlertDialog.Builder(this)
-                        .setTitle("5. Daily & Weekly Class Schedule")
+                        .setTitle("Class Schedule")
                         .setMessage(RoutineStore.getWeeklyRoutine())
                         .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
                         .show();
@@ -182,7 +194,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                         "Eligibility Status: " + (pct >= 75.0 ? "ELIGIBLE ✅" : "NOT ELIGIBLE ❌");
 
                 new AlertDialog.Builder(this)
-                        .setTitle("6. Monthly & Semester Reports")
+                        .setTitle("Monthly & Semester Reports")
                         .setMessage(reportMsg)
                         .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
                         .show();
@@ -197,7 +209,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                     sb.append((i + 1)).append(". ").append(notices.get(i)).append("\n\n");
                 }
                 new AlertDialog.Builder(this)
-                        .setTitle("7. Notifications & Absent Alerts")
+                        .setTitle("Notifications & Absent Alerts")
                         .setMessage(sb.length() > 0 ? sb.toString().trim() : "No new notifications or low attendance warnings.")
                         .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
                         .show();
@@ -216,7 +228,7 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                 shareIntent.setType("text/plain");
                 shareIntent.putExtra(Intent.EXTRA_SUBJECT, "My Attendance Report (" + studentId + ")");
                 shareIntent.putExtra(Intent.EXTRA_TEXT, report.toString());
-                startActivity(Intent.createChooser(shareIntent, "9. Export / Download Report via"));
+                startActivity(Intent.createChooser(shareIntent, "Export / Download Report via"));
             });
         }
 
@@ -632,35 +644,6 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
             }
         }
 
-        int totalClassesAll = records != null ? records.size() : 0;
-        int presentAll = 0;
-        int absentAll = 0;
-        int lateAll = 0;
-        if (records != null) {
-            for (AttendanceRecord r : records) {
-                String st = r.getStatus() != null ? r.getStatus().toLowerCase() : "";
-                if (st.contains("present") || st.contains("p")) presentAll++;
-                else if (st.contains("late")) lateAll++;
-                else absentAll++;
-            }
-        }
-        double overallPct = totalClassesAll > 0 ? ((double) presentAll / totalClassesAll) * 100 : 0.0;
-
-        if (tvStatTotal != null) tvStatTotal.setText(String.valueOf(totalClassesAll));
-        if (tvStatPresent != null) tvStatPresent.setText(String.valueOf(presentAll));
-        if (tvStatAbsent != null) tvStatAbsent.setText(String.valueOf(absentAll));
-        if (tvStatLate != null) tvStatLate.setText(String.valueOf(lateAll));
-
-        if (tvStudentEligibility != null) {
-            if (overallPct >= 75.0) {
-                tvStudentEligibility.setText("Status: ELIGIBLE ✅ (Overall: " + String.format(Locale.getDefault(), "%.1f", overallPct) + "%)");
-                tvSuccessStyle(tvStudentEligibility);
-            } else {
-                tvStudentEligibility.setText("Status: NOT ELIGIBLE ❌ (Overall: " + String.format(Locale.getDefault(), "%.1f", overallPct) + "%)");
-                tvErrorStyle(tvStudentEligibility);
-            }
-        }
-
         if (recyclerViewStudentCourses != null) {
             CourseSummaryAdapter courseAdapter = new CourseSummaryAdapter(this, summaries, summary -> {
                 StringBuilder sb = new StringBuilder();
@@ -674,20 +657,6 @@ public class HomeActivity extends AppCompatActivity implements SensorEventListen
                         .show();
             });
             recyclerViewStudentCourses.setAdapter(courseAdapter);
-        }
-    }
-
-    private void tvSuccessStyle(TextView tv) {
-        if (tv != null) {
-            tv.setBackgroundColor(0xFFE8F5E9);
-            tv.setTextColor(0xFF2E7D32);
-        }
-    }
-
-    private void tvErrorStyle(TextView tv) {
-        if (tv != null) {
-            tv.setBackgroundColor(0xFFFFEBEE);
-            tv.setTextColor(0xFFC62828);
         }
     }
 
