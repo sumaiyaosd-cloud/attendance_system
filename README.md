@@ -134,7 +134,7 @@ An advanced Android application built using Java and XML, designed for universit
 
 ## GitHub Repository
 
-- **Repository**: [https://github.com/sumaiyaosd-cloud/attendance_system](https://github.com/sumaiyaosd-cloud/attendance_student_system)
+- **Repository**: [https://github.com/sumaiyaosd-cloud/attendance_system](https://github.com/sumaiyaosd-cloud/attendance_system)
 
 ---
 
