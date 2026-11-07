@@ -7,6 +7,7 @@ An advanced Android application built using Java and XML, designed for universit
 - **Project Name**: Attendance Management System
 - **Developer**: Sumaiya Akter
 - **Student ID**: CS-D-85-22-122932
+- **Roll**: 15
 - **Department**: Computer Science and Engineering
 - **University**: Dhaka International University
 - **Platform**: Android
@@ -142,6 +143,7 @@ An advanced Android application built using Java and XML, designed for universit
 
 - **Sumaiya Akter**
 - **Student ID**: CS-D-85-22-122932
+- **Roll**: 15
 - **Department of Computer Science and Engineering**
 - **Dhaka International University**
 - **Project**: Attendance Management System

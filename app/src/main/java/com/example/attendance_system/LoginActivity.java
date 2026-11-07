@@ -88,13 +88,6 @@ public class LoginActivity extends AppCompatActivity {
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
         String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
         String role = rbLoginTeacher.isChecked() ? "Teacher" : "Student";
-        String studentId = "";
-        if (etStudentId != null && etStudentId.getText() != null) {
-            studentId = etStudentId.getText().toString().trim();
-        }
-        if (studentId.isEmpty() && !email.isEmpty()) {
-            studentId = email.split("@")[0];
-        }
 
         if (email.isEmpty()) {
             etEmail.setError("Email is required");
@@ -108,23 +101,51 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        // Verify if user is registered in UserStore
+        UserStore.UserInfo userInfo = UserStore.verifyUser(this, email, password);
+
+        // If not found in local UserStore, allow if pre-existing demo/fallback account or Firebase Auth works,
+        // but for strict validation, if UserStore has users, require registration. To be user-friendly,
+        // if UserStore returns null, we check if Firebase auth or allow a default demo account, OR enforce registration.
+        // The user specifically requested: "random kono pass diye or email diye jeno kaw student/teacher dash e duika jaite na pare ager reg kore then oi passm or mail diye dukte parbe"
+        
+        if (userInfo == null) {
+            // Check if Firebase Auth can sign in
+            if (mAuth != null) {
+                mAuth.signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                proceedLogin(email, role, email.split("@")[0], password);
+                            } else {
+                                Snackbar.make(btnLogin, "Account not found or incorrect password! Please register first.", Snackbar.LENGTH_LONG).show();
+                            }
+                        });
+                return;
+            } else {
+                Snackbar.make(btnLogin, "Account not found or incorrect password! Please register first.", Snackbar.LENGTH_LONG).show();
+                return;
+            }
+        } else {
+            proceedLogin(userInfo.email, userInfo.role, userInfo.studentId, password);
+        }
+    }
+
+    private void proceedLogin(String email, String role, String studentId, String password) {
+        if (studentId == null || studentId.isEmpty()) {
+            studentId = email.split("@")[0];
+        }
+
         boolean rememberMe = cbRememberMe.isChecked();
         SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
         prefs.edit()
                 .putString("logged_email", email)
                 .putString("user_role", role)
                 .putString("student_id", studentId)
+                .putString("teacher_name", email.contains("@") ? email.split("@")[0] : email)
                 .putBoolean("remember_me", rememberMe)
                 .apply();
 
         Snackbar.make(btnLogin, "Login Successful (" + role + ")!", Snackbar.LENGTH_SHORT).show();
-
-        if (mAuth != null) {
-            try {
-                mAuth.signInWithEmailAndPassword(email, password);
-            } catch (Exception ignored) {
-            }
-        }
 
         Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
         startActivity(intent);

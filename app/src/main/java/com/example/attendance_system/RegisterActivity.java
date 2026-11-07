@@ -82,18 +82,22 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         if ("Teacher".equals(role)) {
-            studentId = ""; // Teachers don't need student ID
+            studentId = "";
         }
+
+        // Save registered user securely in UserStore
+        UserStore.registerUser(this, email, password, role, studentId, studentId.isEmpty() ? email : studentId);
 
         SharedPreferences prefs = getSharedPreferences("AttendancePrefs", MODE_PRIVATE);
         prefs.edit()
                 .putString("logged_email", email)
                 .putString("user_role", role)
                 .putString("student_id", studentId)
+                .putString("teacher_name", email.contains("@") ? email.split("@")[0] : email)
                 .putBoolean("remember_me", true)
                 .apply();
 
-        Snackbar.make(btnRegister, "Registration Successful (" + role + ")!", Snackbar.LENGTH_SHORT).show();
+        Snackbar.make(btnRegister, "Registration Successful (" + role + ")! You can now login.", Snackbar.LENGTH_SHORT).show();
 
         if (mAuth != null) {
             try {
@@ -102,7 +106,7 @@ public class RegisterActivity extends AppCompatActivity {
             }
         }
 
-        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
+        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
         startActivity(intent);
         finish();
     }
